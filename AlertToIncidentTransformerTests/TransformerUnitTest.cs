@@ -135,6 +135,11 @@ namespace AlertToIncidentTransformerTests
             throw new NotImplementedException();
         }
 
+        public bool Initialise()
+        {
+            return true;
+        }
+
         public (bool wasAlreadyDown, Incident incident) RecordIncident(Incident incident)
         {
             _recordIncidentCount++;

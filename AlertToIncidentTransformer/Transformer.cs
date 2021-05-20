@@ -10,7 +10,7 @@ namespace AlertToIncidentTransformer
     }
     public class Transformer : ITransformer
     {
-        private readonly IIncidentManagementService _componentStateEvaluator;
+        private readonly IIncidentManagementService _incidentManagementService;
 
         private readonly Dictionary<(string Product, string Component, string Fault), (string CatalogItem, string CmdbItem, string Fault, Priority Priority)> _fullMapAlertToIncident
             = new Dictionary<(string Product, string Component, string Fault), (string CatalogItem, string CmdbItem, string Fault, Priority Priority)>();
@@ -30,7 +30,7 @@ namespace AlertToIncidentTransformer
         
         public Transformer(IIncidentManagementService componentStateEvaluator)
         {
-            _componentStateEvaluator = componentStateEvaluator;
+            _incidentManagementService = componentStateEvaluator;
             BuildMapping();
         }
 
@@ -41,7 +41,7 @@ namespace AlertToIncidentTransformer
 
             var incident = MapIncidentToAlert(alert);
 
-            var componentState = _componentStateEvaluator.RecordIncident(incident);
+            var componentState = _incidentManagementService.RecordIncident(incident);
 
             if (componentState.wasAlreadyDown)
             {
@@ -141,28 +141,7 @@ namespace AlertToIncidentTransformer
         public IncidentActivity? IncidentActivityResponse { get; }
     }
 
-    public readonly struct Incident
-    {
-        public Incident(string catalogItem,
-            string cmdbItem, string fault, string description, DateTime createdOn,
-            Priority priority)
-        {
-            CatalogItem = catalogItem;
-            CmdbItem = cmdbItem;
-            Fault = fault;
-            Description = description;
-            CreatedOn = createdOn;
-            Priority = priority;
-            Id = Guid.NewGuid().ToString();
-        }
-        public string Id { get; }
-        public string CatalogItem { get; }
-        public string CmdbItem { get; }
-        public string Fault { get; }
-        public string Description { get; }
-        public DateTime CreatedOn { get; }
-        public Priority Priority { get; }
-    }
+    
 
     public readonly struct IncidentActivity
     {
