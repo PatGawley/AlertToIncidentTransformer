@@ -50,36 +50,115 @@ namespace AlertToIncidentTransformer
 
         public bool CloseIncident(string Id)
         {
+            var closeIncident = 
+                new CloseIncidentAction(Id, _incidents);
+
+            return ActionAndPersist(closeIncident);
+
+        }
+
+        private interface IAction
+        {
+            bool Invoke();
+        }
+
+        private class CloseIncidentAction : IAction
+        {
+            private readonly string _id;
+            private readonly List<Incident> _incidents;
+
+            public CloseIncidentAction(string id, List<Incident> incidents)
+            {
+                _id = id;
+                _incidents = incidents;
+
+            }
+            public bool Invoke()
+            {
+                return
+                    _incidents.RemoveAll(i => i.Id == _id) == 1;
+            }
+        }
+
+        private class RecordIncidentAction : IAction
+        {
+            private readonly List<Incident> _incidents;
+            private readonly Incident _incident;
+
+            public RecordIncidentAction(Incident incident, List<Incident> incidents)
+            {
+                _incidents = incidents;
+                _incident = incident;
+            }
+
+            public bool Invoke()
+            {
+                Expression<Func<Incident, bool>> isAlreadyDown = i => i.CmdbItem == _incident.CmdbItem;
+                var matchByCmdbItem = isAlreadyDown.Compile();
+
+                if (_incidents.Any(matchByCmdbItem))
+                {
+                    return false;
+                }
+
+                _incidents.Add(_incident);
+
+                return true;
+
+            }
+        }
+
+        private bool ActionAndPersist(IAction action)
+        {
+            var success = false;
+
             CheckState();
+            try
+            {
+                if (_incidentRepository.AcquireLock())
+                {
+                    var isRemoved =
+                    action.Invoke();
 
-            var isRemoved = 
-                _incidents.RemoveAll(i => i.Id == Id) == 1;
+                    if (isRemoved)
+                    {
+                        success =
+                            Persist();
+                    }
+                }
 
-            if (!isRemoved)
-                return false;
+            }
+            catch (Exception)
+            {
+                _incidentRepository.ReleaseLock();
+                throw;
+            }
 
-            var isPersisted = 
-                Persist();
-
-            return isPersisted;
+            _incidentRepository.ReleaseLock();
+            return success;
         }
 
         public (bool wasAlreadyDown, Incident incident) RecordIncident(Incident incident)
         {
-            CheckState();
+            var recordIncidentAction = 
+                new RecordIncidentAction(incident, _incidents);
 
-            Expression<Func<Incident, bool>> isAlreadyDown = i => i.CmdbItem == incident.CmdbItem;
-            var matchByCmdbItem = isAlreadyDown.Compile();
+            var wasAlreadyDown = 
+                !ActionAndPersist(recordIncidentAction);
 
-            if (_incidents.Any(matchByCmdbItem))
+            Incident affectedIncident;
+
+            if (wasAlreadyDown)
             {
-                return (true, _incidents.First(matchByCmdbItem));
+                affectedIncident = _incidents.First(i => i.CmdbItem == incident.CmdbItem);
+            }
+            else
+            {
+                affectedIncident = incident;
             }
 
-            _incidents.Add(incident);
-            Persist();
+            return (wasAlreadyDown, affectedIncident);
 
-            return (false, incident);
         }
     }
 

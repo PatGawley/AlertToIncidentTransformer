@@ -10,6 +10,7 @@ namespace AlertToIncidentTransformer
         bool AcquireLock();
         bool IsLocked();
         bool PostIncidents(List<Incident> incidents);
+        bool ReleaseLock();
     }
 
     public class IncidentRepository : IIncidentRepository
@@ -19,6 +20,12 @@ namespace AlertToIncidentTransformer
         public bool AcquireLock()
         {
             _isLocked = true;
+            return true;
+        }
+
+        public bool ReleaseLock()
+        {
+            _isLocked = false;
             return true;
         }
 

@@ -117,6 +117,7 @@ namespace AlertToIncidentTransformerTests
         [InlineData("Tlogs Inbound", "Catalog API")]
         public void GivenActiveIncidentForCmdbItem_WhenRecordIncidentForDifferentCmdb_ThenAlreadyDownIsFalse(string cmdbItem, string cmdbItem2)
         {
+            
             var activeIncident = TestIncident(cmdbItem);
             var incidentManagementService = NoActiveIncidents();
             _ = incidentManagementService.RecordIncident(activeIncident);
@@ -147,7 +148,10 @@ namespace AlertToIncidentTransformerTests
         {
             var incidentManagementService = StartupIncidentManagementService(new List<Incident>());
 
-            foreach(var incident in incidentManagementService.ActiveIncidents())
+            _incidentRepository.Setup(r => r.PostIncidents(It.IsAny<List<Incident>>())).Returns(true);
+
+
+            foreach (var incident in incidentManagementService.ActiveIncidents())
             {
                 incidentManagementService.CloseIncident(incident.Id);
             }
