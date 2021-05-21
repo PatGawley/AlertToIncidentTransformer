@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace AlertToIncidentTransformer
 {
@@ -66,6 +67,18 @@ namespace AlertToIncidentTransformer
         public (bool wasAlreadyDown, Incident incident) RecordIncident(Incident incident)
         {
             CheckState();
+
+            Expression<Func<Incident, bool>> isAlreadyDown = i => i.CmdbItem == incident.CmdbItem;
+            var matchByCmdbItem = isAlreadyDown.Compile();
+
+            if (_incidents.Any(matchByCmdbItem))
+            {
+                return (true, _incidents.First(matchByCmdbItem));
+            }
+
+            _incidents.Add(incident);
+            Persist();
+
             return (false, incident);
         }
     }
