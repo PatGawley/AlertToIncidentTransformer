@@ -16,6 +16,13 @@ namespace AlertToIncidentTransformer
     public class IncidentRepository : IIncidentRepository
     {
         private bool _isLocked = false;
+        private readonly string _storageConnectionString, _incidentContainer;
+
+        public IncidentRepository(string storageConnectionString, string incidentContainer = "incidents")
+        {
+            _storageConnectionString = storageConnectionString;
+            _incidentContainer = incidentContainer;
+        }
 
         public bool AcquireLock()
         {

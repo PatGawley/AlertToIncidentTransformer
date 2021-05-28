@@ -150,6 +150,7 @@ namespace AlertToIncidentTransformer
 
             if (wasAlreadyDown)
             {
+                _incidents = _incidentRepository.GetIncidents();
                 affectedIncident = _incidents.First(i => i.CmdbItem == incident.CmdbItem);
             }
             else
