@@ -18,7 +18,7 @@ namespace AlertToIncidentTransformer
         private bool _isLocked = false;
         private readonly string _storageConnectionString, _incidentContainer;
 
-        public IncidentRepository(string storageConnectionString, string incidentContainer = "incidents")
+        public IncidentRepository(string storageConnectionString, string incidentContainer = "incidents", string incidentFile = "currentIncidents.json")
         {
             _storageConnectionString = storageConnectionString;
             _incidentContainer = incidentContainer;
