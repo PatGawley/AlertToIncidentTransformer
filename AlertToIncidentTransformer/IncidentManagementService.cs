@@ -33,7 +33,7 @@ namespace AlertToIncidentTransformer
         }
         private bool Persist()
         {
-            return _incidentRepository.PostIncidents(_incidents);
+            return _incidentRepository.PostIncidents(_incidents).Result;
         }
 
         public bool Initialise()

@@ -14,7 +14,7 @@ namespace AlertToIncidentTransformer
         Task<List<Incident>> GetIncidents();
         bool AcquireLock();
         bool IsLocked();
-        bool PostIncidents(List<Incident> incidents);
+        Task<bool> PostIncidents(List<Incident> incidents);
         bool ReleaseLock();
     }
 
@@ -72,6 +72,31 @@ namespace AlertToIncidentTransformer
 
         public bool IsLocked() => _isLocked;
 
-        public bool PostIncidents(List<Incident> incidents) => _isLocked;
+        public async Task<bool> PostIncidents(List<Incident> incidents)
+        {
+            try
+            {
+                if (!await _containerClient.ExistsAsync())
+                {
+                    await _containerClient.CreateAsync();
+                }
+
+                using (Stream incidentsToUpload = new MemoryStream())
+                {
+
+                    await JsonSerializer.SerializeAsync(incidentsToUpload, incidents);
+                    incidentsToUpload.Position = 0;
+                    var response = await _blobClient.UploadAsync(incidentsToUpload, true);
+
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+                //TODO: record exceptions here
+            }
+         
+        }
     }
 }

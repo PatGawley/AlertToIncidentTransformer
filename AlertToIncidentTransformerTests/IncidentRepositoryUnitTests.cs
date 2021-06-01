@@ -23,7 +23,7 @@ namespace AlertToIncidentTransformerTests
 
         [Fact]
 
-        public void GivenNoIncidents_WhenPostXIncidents_ ()
+        public void GivenNoIncidents_WhenPostXIncidents_ThenXIncidentsReuturned ()
         {
             var givenNoIncidents = new IncidentRepository("UseDevelopmentStorage=true;", "givennoincidents-whenpostxincidents-thenxincidentsreturned");
             
@@ -33,7 +33,7 @@ namespace AlertToIncidentTransformerTests
             {
                 var incidents = fixture.CreateMany<Incident>(x).ToList();
 
-                var whenPostXIncidents = givenNoIncidents.PostIncidents(incidents);
+                var whenPostXIncidents = givenNoIncidents.PostIncidents(incidents).Result;
 
                 var thenXIncidentsReturned = givenNoIncidents.GetIncidents().Result;
 

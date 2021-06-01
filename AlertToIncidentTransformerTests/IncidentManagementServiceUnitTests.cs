@@ -6,6 +6,7 @@ using Xunit;
 using FluentAssertions;
 using System.Linq;
 using Moq;
+using System.Threading.Tasks;
 
 //https://hamidmosalla.com/2018/08/16/xunit-control-the-test-execution-order/
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -148,7 +149,7 @@ namespace AlertToIncidentTransformerTests
         {
             var incidentManagementService = StartupIncidentManagementService(new List<Incident>());
 
-            _incidentRepository.Setup(r => r.PostIncidents(It.IsAny<List<Incident>>())).Returns(true);
+            _incidentRepository.Setup(r => r.PostIncidents(It.IsAny<List<Incident>>())).Returns(Task.FromResult(true));
 
 
             foreach (var incident in incidentManagementService.ActiveIncidents())
