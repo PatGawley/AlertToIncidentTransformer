@@ -41,7 +41,7 @@ namespace AlertToIncidentTransformer
 
             if (_incidentRepository.AcquireLock())
             {
-                _incidents = _incidentRepository.GetIncidents();
+                _incidents = _incidentRepository.GetIncidents().Result;
                 _initialised = true;
             }
 
@@ -150,7 +150,7 @@ namespace AlertToIncidentTransformer
 
             if (wasAlreadyDown)
             {
-                _incidents = _incidentRepository.GetIncidents();
+                _incidents = _incidentRepository.GetIncidents().Result;
                 affectedIncident = _incidents.First(i => i.CmdbItem == incident.CmdbItem);
             }
             else

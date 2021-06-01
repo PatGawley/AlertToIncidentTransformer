@@ -161,7 +161,7 @@ namespace AlertToIncidentTransformerTests
         private IncidentManagementService StartupIncidentManagementService(List<Incident> baseLineIncidents)
         {
             _incidentRepository.Setup(r => r.AcquireLock()).Returns(true);
-            _incidentRepository.Setup(r => r.GetIncidents()).Returns(baseLineIncidents);
+            _incidentRepository.Setup(r => r.GetIncidents().Result).Returns(baseLineIncidents);
             var incidentManagementService = new IncidentManagementService(_incidentRepository.Object);
             incidentManagementService.Initialise();
 

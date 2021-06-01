@@ -54,13 +54,16 @@ namespace AlertToIncidentTransformer
         {
             var incidents = new List<Incident>();
 
-            if (await _blobClient.ExistsAsync())
+            if (await _containerClient.ExistsAsync())
             {
-                
-                var response = await _blobClient.DownloadAsync();
-                
-                incidents = await JsonSerializer.DeserializeAsync<List<Incident>>(response.Value.Content);
-                
+                if (await _blobClient.ExistsAsync())
+                {
+
+                    var response = await _blobClient.DownloadAsync();
+
+                    incidents = await JsonSerializer.DeserializeAsync<List<Incident>>(response.Value.Content);
+
+                }
             }
 
             return incidents;
