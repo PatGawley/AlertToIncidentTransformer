@@ -41,8 +41,29 @@ namespace AlertToIncidentTransformerTests
 
             }
             
+        }
 
-            
+        [Fact]
+
+        public void GivenNoIncidents_WhenPostXIncidents_ThenXIncidentsReturnedWithCorrectDetails()
+        {
+            var givenNoIncidents = new IncidentRepository("UseDevelopmentStorage=true;", "givennoincidents-whenpostxincidents-thenxincidentsreturnedwithcorrectdetails");
+
+            Fixture fixture = new Fixture();
+
+            for (int x = 1; x <= 100; x++)
+            {
+                var incidents = fixture.CreateMany<Incident>(x).ToList();
+
+                var whenPostXIncidents = givenNoIncidents.PostIncidents(incidents).Result;
+
+                var thenXIncidentsReturnedWithCorrectDetails = givenNoIncidents.GetIncidents().Result;
+
+                thenXIncidentsReturnedWithCorrectDetails.Should().BeEquivalentTo(incidents);
+
+
+            }
+
         }
     }
 }
