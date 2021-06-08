@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using System;
 using System.Collections.Generic;
@@ -20,34 +21,55 @@ namespace AlertToIncidentTransformer
 
     public class IncidentRepository : IIncidentRepository
     {
-        private bool _isLocked = false;
         private readonly BlobServiceClient _blobServiceClient;
         private readonly BlobContainerClient _containerClient;
         private readonly BlobClient _blobClient;
         private readonly BlobLeaseClient _blobLeaseClient;
+        private readonly TimeSpan _leaseTime;
+        private BlobLease _lease;
 
 
-        public IncidentRepository(string storageConnectionString, string incidentContainer = "incidents", string incidentFile = "currentIncidents.json")
+        public IncidentRepository(string storageConnectionString, string incidentContainer = "incidents", string incidentFile = "currentIncidents.json", int leaseTimeInSeconds = 15)
         {
             _blobServiceClient = new BlobServiceClient(storageConnectionString);
             _containerClient = _blobServiceClient.GetBlobContainerClient(incidentContainer);
             _blobClient = _containerClient.GetBlobClient(incidentFile);
             _blobLeaseClient = _blobClient.GetBlobLeaseClient();
-
+            _leaseTime = TimeSpan.FromSeconds(leaseTimeInSeconds);
         }
 
         public bool AcquireLock()
         {
-            _blobLeaseClient.Acquire(TimeSpan.FromSeconds(1));
-            _isLocked = true;
+            if (!_containerClient.Exists())
+            {
+                _containerClient.Create();   
+            }
+            if (!_blobClient.Exists())
+            {
+                var emptyStream = new MemoryStream();
+                _blobClient.Upload(emptyStream);
+            }
+            _lease = _blobLeaseClient.Acquire(_leaseTime);
             return true;
         }
 
+        private void CreateEmptyIncidentsFileIfOneDoesNotExist()
+        {
+            if (!_containerClient.Exists())
+            {
+                _containerClient.Create();
+            }
+            if (!_blobClient.Exists())
+            {
+                var emptyStream = new MemoryStream();
+                _blobClient.Upload(emptyStream);
+            }
+        }
         public bool ReleaseLock()
         {
             _blobLeaseClient.Release();
-            _isLocked = false;
-            return true;
+            _lease = null;
+            return IsLocked();
         }
 
         public async Task<List<Incident>> GetIncidents()
@@ -58,10 +80,18 @@ namespace AlertToIncidentTransformer
             {
                 if (await _blobClient.ExistsAsync())
                 {
+                    Stream fileContents = new MemoryStream();
+                    
+                    var response = await _blobClient.DownloadToAsync(fileContents);
 
-                    var response = await _blobClient.DownloadAsync();
+                    
+                    fileContents.Position = 0;
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
 
-                    incidents = await JsonSerializer.DeserializeAsync<List<Incident>>(response.Value.Content);
+                    incidents = await JsonSerializer.DeserializeAsync<List<Incident>>(fileContents, options);
 
                 }
             }
@@ -70,7 +100,21 @@ namespace AlertToIncidentTransformer
         }
 
 
-        public bool IsLocked() => _isLocked;
+        public bool IsLocked()
+        {
+            try
+            {
+                CreateEmptyIncidentsFileIfOneDoesNotExist();
+                _blobClient.SetTags(new Dictionary<string, string>() { { "LeaseCheck", "1" } });
+            }
+            catch (Exception ex)
+            {
+
+                return true;
+            }
+            
+            return false;
+        }
 
         public async Task<bool> PostIncidents(List<Incident> incidents)
         {

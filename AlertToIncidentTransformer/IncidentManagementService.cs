@@ -163,7 +163,7 @@ namespace AlertToIncidentTransformer
         }
     }
 
-    public readonly struct Incident
+    public struct Incident
     {
         public Incident(string catalogItem,
             string cmdbItem, string fault, string description, DateTime createdOn,
@@ -177,12 +177,12 @@ namespace AlertToIncidentTransformer
             Priority = priority;
             Id = Guid.NewGuid().ToString();
         }
-        public string Id { get; }
-        public string CatalogItem { get; }
-        public string CmdbItem { get; }
-        public string Fault { get; }
-        public string Description { get; }
-        public DateTime CreatedOn { get; }
-        public Priority Priority { get; }
+        public string Id { get; set; }
+        public string CatalogItem { get; set; }
+        public string CmdbItem { get; set; }
+        public string Fault { get; set; }
+        public string Description { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public Priority Priority { get; set; }
     }
 }
